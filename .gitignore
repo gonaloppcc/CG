@@ -1,6 +1,15 @@
 # Prerequisites
 *.d
 
+# Clion
+.idea/
+
+# IntelliJ
+out/
+
+# CMake
+cmake-build-*/
+
 # Compiled Object files
 *.slo
 *.lo
