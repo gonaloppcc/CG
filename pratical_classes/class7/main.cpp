@@ -37,13 +37,16 @@ struct Point {
 /* Camera stuff */
 int startX, startY, tracking = 0;
 
-int alpha = 0, beta = 45, r = 50;
+float alpha = 0.f, beta = 45;
+double r = 2;
 
 Point L = {0.f, 0.f, 1.f};
 
 float speed = 1;
 
 float camX = 0, camY = 30, camZ = 40;
+
+float sensitivity = 1.f;
 
 /* ------------------------------------------------------------------------------------------------------------------ */
 
@@ -57,7 +60,7 @@ unsigned int seed = 0;
 vector<tuple<float, float>> trees; // Position of the trees generated.
 
 const int baseRadius = 2;
-const int height = 5;
+const int treeHeight = 5;
 const int slices = 10;
 const int stacks = 10;
 
@@ -68,8 +71,8 @@ unsigned char *imageData;
 
 float max_height = 30; // Max height of a point of the image
 
-int halfW;
-int halfH;
+float halfW;
+float halfH;
 
 /* ------------------------------------------------------------------------------------------------------------------ */
 
@@ -78,11 +81,11 @@ const float glade_radius = 50; // Center of the forest which trees can't be draw
 /* ------------------------------------------------------------------------------------------------------------------ */
 
 float get_rand_pos() {
-    return ((((float) rand() / (float) RAND_MAX)) * 255); // TODO: Put in the middle of the referential
+    return ((float) rand() / (float) RAND_MAX * 255); // TODO: Put in the middle of the referential
 }
 
 float get_rand_colour() {
-    return (((float) (rand() / ((float) RAND_MAX)))) / 5;
+    return (((float) (rand() / ((float) RAND_MAX)))) / 5; // NOLINT(cppcoreguidelines-narrowing-conversions)
 }
 
 void changeSize(int w, int h) {
@@ -93,7 +96,7 @@ void changeSize(int w, int h) {
         h = 1;
 
     // compute window's aspect ratio
-    float ratio = ((((float) w) * 1.0f)) / (float) h;
+    float ratio = (float) w * 1.0f / (float) h;
 
     // Reset the coordinate system before modifying
     glMatrixMode(GL_PROJECTION);
@@ -142,24 +145,27 @@ float hf(float x, float z) {
 void initTerrain() {
     glEnableClientState(GL_VERTEX_ARRAY);
 
-    fieldVertices = (GLuint *) malloc(sizeof(GLuint) * th);
+    fieldVertices = (GLuint *) malloc(sizeof(GLuint) * th - 1);
 
     glGenBuffers((int) th, fieldVertices);
 
-    halfW = tw / 2;
-    halfH = th / 2;
+    halfW = ((float) tw) / 2;
+    halfH = ((float) th) / 2;
 
-    for (int n_strip = 0; n_strip < th; n_strip++) {
+    int i_halfW = (int) halfW;
+    int i_halfH = (int) halfH;
+
+    for (int n_strip = 0; n_strip < th - 1; n_strip++) {
         vector<double> strip;
 
         for (int j = 0; j < tw; j++) {
-            strip.push_back(n_strip - halfW);
+            strip.push_back(n_strip - i_halfW);
             strip.push_back(h(n_strip, j));
-            strip.push_back(j - halfH);
+            strip.push_back(j - i_halfH);
 
-            strip.push_back(n_strip + 1 - halfW);
-            strip.push_back(h(n_strip, j));
-            strip.push_back(j - halfH);
+            strip.push_back(n_strip + 1 - i_halfW);
+            strip.push_back(h(n_strip + 1, j));
+            strip.push_back(j - i_halfH);
         }
 
         glBindBuffer(GL_ARRAY_BUFFER, fieldVertices[n_strip]);
@@ -203,14 +209,14 @@ void drawTree() {
     // Downside of the tree
     glColor3f(0.6f, 0.4f, 0);
 
-    glutSolidCone(((float) baseRadius) / 10, height, slices, stacks);
+    glutSolidCone(((float) baseRadius) / 10, treeHeight, slices, stacks);
 
     // Upper side of the tree
     glTranslatef(0, 0, 2);
 
     glColor3f(0, 0.5f + get_rand_colour(), 0);
 
-    glutSolidCone(baseRadius, height, slices, stacks);
+    glutSolidCone(baseRadius, treeHeight, slices, stacks);
 
     glColor3f(0, 0, 0);
 }
@@ -235,6 +241,9 @@ void drawTrees() {
 }
 
 void renderScene() {
+    glutWarpPointer(glutGet(GLUT_WINDOW_WIDTH) / 2, glutGet(GLUT_WINDOW_HEIGHT) / 2);
+
+    float eye_height = 2;
 
     float pos[4] = {-1.0, 1.0, 1.0, 0.0};
 
@@ -242,8 +251,11 @@ void renderScene() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glLoadIdentity();
-    gluLookAt(camX, hf(camX + halfW, camZ - halfH), camZ,
-              camX + L.x, 0, camZ + L.z,
+
+    camY = hf(camX + ((float) halfW), camZ + ((float) halfH)) + eye_height;
+
+    gluLookAt(camX, camY, camZ,
+              camX + sin(alpha), camY, camZ + cos(alpha),
               0.0f, 1.0f, 0.0f);
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -255,23 +267,31 @@ void renderScene() {
     glutSwapBuffers();
 }
 
+tuple<float, float, float> get_distance() {
+    return make_tuple(L.x - camX, 0, L.z - camZ);
+}
 
 
 // Begin of Input stuff
 
 void processKeys(unsigned char key, int xx, int yy) {
+    Point direction = {L.x - camX, L.y - camY, L.z - camZ};
+
     switch (key) {
         case 'W':
         case 'w':
-            camX += L.x * speed;
-            camZ += L.z * speed;
+            // Position
+            camX += (float) (r * sin(alpha * 3.14 / 180.0));
+            //camY = r * sin(beta * 3.14 / 180.0);
+            camZ += (float) (r * cos(alpha * 3.14 / 180.0));
+
             cout << "w pressed!" << endl;
             break;
 
         case 'D':
         case 'd':
-            camX += L.z * speed;
-            camZ -= L.x * speed;
+            camX -= L.z * speed;
+            camZ += L.x * speed;
             break;
         case 'A':
         case 'a':
@@ -285,82 +305,47 @@ void processKeys(unsigned char key, int xx, int yy) {
             camZ -= L.z * speed;
             cout << "s pressed!" << endl;
             break;
+        default:
+            return;
     }
-    // put code to process regular keys in here
+    cout << "height=" << hf(camX + halfW, camZ + halfH) << endl;
+
+    glutPostRedisplay();
 }
 
 void processSpecialKeys(int key, int xx, int yy) {
-    switch (key) {
-        case GLUT_KEY_UP:
-            camX += L.x * speed;
-            camY += L.y * speed;
-            camZ += L.z * speed;
-            break;
-
-    }
 }
 
 void processMouseButtons(int button, int state, int xx, int yy) {
 
-    if (state == GLUT_DOWN) {
-        startX = xx;
-        startY = yy;
-        if (button == GLUT_LEFT_BUTTON)
-            tracking = 1;
-        else if (button == GLUT_RIGHT_BUTTON)
-            tracking = 2;
-        else
-            tracking = 0;
-    } else if (state == GLUT_UP) {
-        if (tracking == 1) {
-            alpha += (xx - startX);
-            beta += (yy - startY);
-        } else if (tracking == 2) {
-
-            r -= yy - startY;
-            if (r < 3)
-                r = 3.0;
-        }
-        tracking = 0;
-    }
 }
 
 
-void processMouseMotion(int xx, int yy) {
+void processPassiveMouseMotion(int xx, int yy) {
+    int deltaX = xx - glutGet(GLUT_WINDOW_WIDTH) / 2;
+    int deltaY = yy - glutGet(GLUT_WINDOW_HEIGHT) / 2;
 
-    int deltaX, deltaY;
-    int alphaAux, betaAux;
-    int rAux;
+    //cout << "deltaX=" << deltaX << " deltaY=" << deltaY << endl;
 
-    if (!tracking)
-        return;
+    float alphaAux, betaAux;
+    float rAux;
 
-    deltaX = xx - startX;
-    deltaY = yy - startY;
+    alphaAux = alpha + (float) (deltaX) / sensitivity;
+    betaAux = (float) beta + ((float) deltaY * sensitivity / 1000.f);
 
-    if (tracking == 1) {
+    if (betaAux > 85.0)
+        betaAux = 85.0;
+    else if (betaAux < -85.0)
+        betaAux = -85.0;
 
+    rAux = r;
+    cout << "alpha=" << alpha << endl;
 
-        alphaAux = alpha + deltaX;
-        betaAux = beta + deltaY;
-
-        if (betaAux > 85.0)
-            betaAux = 85.0;
-        else if (betaAux < -85.0)
-            betaAux = -85.0;
-
-        rAux = r;
-    } else if (tracking == 2) {
-
-        alphaAux = alpha;
-        betaAux = beta;
-        rAux = r - deltaY;
-        if (rAux < 3)
-            rAux = 3;
-    }
     camX = rAux * sin(alphaAux * 3.14 / 180.0) * cos(betaAux * 3.14 / 180.0);
-    camZ = rAux * cos(alphaAux * 3.14 / 180.0) * cos(betaAux * 3.14 / 180.0);
-    //camY = rAux * sin(betaAux * 3.14 / 180.0);
+    //camZ = rAux * cos(alphaAux * 3.14 / 180.0) * cos(betaAux * 3.14 / 180.0);
+    camY = rAux * sin(betaAux * 3.14 / 180.0);
+
+    glutPostRedisplay();
 }
 
 // End of Input stuff
@@ -420,7 +405,9 @@ int main(int argc, char **argv) {
     glutKeyboardFunc(processKeys);
     glutSpecialFunc(processSpecialKeys);
     glutMouseFunc(processMouseButtons);
-    glutMotionFunc(processMouseMotion);
+    glutPassiveMotionFunc(processPassiveMouseMotion);
+
+    glutSetCursor(GLUT_CURSOR_NONE);
 
     init();
 

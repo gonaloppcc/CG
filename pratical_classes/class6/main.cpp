@@ -83,7 +83,7 @@ void initTerrain() {
             strip.push_back(j);
 
             strip.push_back(n_strip + 1);
-            strip.push_back(h(n_strip, j));
+            strip.push_back(h(n_strip + 1, j));
             strip.push_back(j);
         }
 
