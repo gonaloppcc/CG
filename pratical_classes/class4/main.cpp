@@ -27,9 +27,9 @@ GLuint vertices, verticesCount;
 
 void spherical2Cartesian() {
 
-    camX = radius * cos(beta) * sin(alfa);
-    camY = radius * sin(beta);
-    camZ = radius * cos(beta) * cos(alfa);
+    camX = radius * cosf(beta) * sinf(alfa);
+    camY = radius * sinf(beta);
+    camZ = radius * cosf(beta) * cosf(alfa);
 }
 
 
@@ -79,7 +79,7 @@ void cylinder0(float radius, float height, int sides) {
 
     glVertex3f(0, height * 0.5, 0);
     for (i = 0; i <= sides; i++) {
-        glVertex3f(cos(i * step * M_PI / 180.0) * radius, height * 0.5, -sin(i * step * M_PI / 180.0) * radius);
+        glVertex3f(cosf(i * step * M_PI / 180.0) * radius, height * 0.5, -sinf(i * step * M_PI / 180.0) * radius);
     }
     glEnd();
 
@@ -88,7 +88,7 @@ void cylinder0(float radius, float height, int sides) {
 
     glVertex3f(0, -height * 0.5, 0);
     for (i = 0; i <= sides; i++) {
-        glVertex3f(cos(i * step * M_PI / 180.0) * radius, -height * 0.5, sin(i * step * M_PI / 180.0) * radius);
+        glVertex3f(cosf(i * step * M_PI / 180.0) * radius, -height * 0.5, sinf(i * step * M_PI / 180.0) * radius);
     }
     glEnd();
 
@@ -96,8 +96,8 @@ void cylinder0(float radius, float height, int sides) {
     glBegin(GL_TRIANGLE_STRIP);
 
     for (i = 0; i <= sides; i++) {
-        glVertex3f(cos(i * step * M_PI / 180.0) * radius, height * 0.5, -sin(i * step * M_PI / 180.0) * radius);
-        glVertex3f(cos(i * step * M_PI / 180.0) * radius, -height * 0.5, -sin(i * step * M_PI / 180.0) * radius);
+        glVertex3f(cosf(i * step * M_PI / 180.0) * radius, height * 0.5, -sinf(i * step * M_PI / 180.0) * radius);
+        glVertex3f(cosf(i * step * M_PI / 180.0) * radius, -height * 0.5, -sinf(i * step * M_PI / 180.0) * radius);
     }
     glEnd();
 }
@@ -123,32 +123,32 @@ void cylinder(float radius, float height, int sides) {
     // top
     for (i = 0; i < sides; i++) {
         glVertex3f(0, height * 0.5, 0);
-        glVertex3f(cos(i * step * M_PI / 180.0) * radius, height * 0.5, -sin(i * step * M_PI / 180.0) * radius);
-        glVertex3f(cos((i + 1) * step * M_PI / 180.0) * radius, height * 0.5,
-                   -sin((i + 1) * step * M_PI / 180.0) * radius);
+        glVertex3f(cosf(i * step * M_PI / 180.0) * radius, height * 0.5, -sinf(i * step * M_PI / 180.0) * radius);
+        glVertex3f(cosf((i + 1) * step * M_PI / 180.0) * radius, height * 0.5,
+                   -sinf((i + 1) * step * M_PI / 180.0) * radius);
     }
 
     // bottom
     for (i = 0; i < sides; i++) {
         glVertex3f(0, -height * 0.5, 0);
-        glVertex3f(cos((i + 1) * step * M_PI / 180.0) * radius, -height * 0.5,
-                   -sin((i + 1) * step * M_PI / 180.0) * radius);
-        glVertex3f(cos(i * step * M_PI / 180.0) * radius, -height * 0.5, -sin(i * step * M_PI / 180.0) * radius);
+        glVertex3f(cosf((i + 1) * step * M_PI / 180.0) * radius, -height * 0.5,
+                   -sinf((i + 1) * step * M_PI / 180.0) * radius);
+        glVertex3f(cosf(i * step * M_PI / 180.0) * radius, -height * 0.5, -sinf(i * step * M_PI / 180.0) * radius);
     }
 
     // body
     for (i = 0; i <= sides; i++) {
 
-        glVertex3f(cos(i * step * M_PI / 180.0) * radius, height * 0.5, -sin(i * step * M_PI / 180.0) * radius);
-        glVertex3f(cos(i * step * M_PI / 180.0) * radius, -height * 0.5, -sin(i * step * M_PI / 180.0) * radius);
-        glVertex3f(cos((i + 1) * step * M_PI / 180.0) * radius, height * 0.5,
-                   -sin((i + 1) * step * M_PI / 180.0) * radius);
+        glVertex3f(cosf(i * step * M_PI / 180.0) * radius, height * 0.5, -sinf(i * step * M_PI / 180.0) * radius);
+        glVertex3f(cosf(i * step * M_PI / 180.0) * radius, -height * 0.5, -sinf(i * step * M_PI / 180.0) * radius);
+        glVertex3f(cosf((i + 1) * step * M_PI / 180.0) * radius, height * 0.5,
+                   -sinf((i + 1) * step * M_PI / 180.0) * radius);
 
-        glVertex3f(cos(i * step * M_PI / 180.0) * radius, -height * 0.5, -sin(i * step * M_PI / 180.0) * radius);
-        glVertex3f(cos((i + 1) * step * M_PI / 180.0) * radius, -height * 0.5,
-                   -sin((i + 1) * step * M_PI / 180.0) * radius);
-        glVertex3f(cos((i + 1) * step * M_PI / 180.0) * radius, height * 0.5,
-                   -sin((i + 1) * step * M_PI / 180.0) * radius);
+        glVertex3f(cosf(i * step * M_PI / 180.0) * radius, -height * 0.5, -sinf(i * step * M_PI / 180.0) * radius);
+        glVertex3f(cosf((i + 1) * step * M_PI / 180.0) * radius, -height * 0.5,
+                   -sinf((i + 1) * step * M_PI / 180.0) * radius);
+        glVertex3f(cosf((i + 1) * step * M_PI / 180.0) * radius, height * 0.5,
+                   -sinf((i + 1) * step * M_PI / 180.0) * radius);
     }
     glEnd();
 }

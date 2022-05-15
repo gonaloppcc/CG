@@ -255,7 +255,7 @@ void renderScene() {
     camY = hf(camX + ((float) halfW), camZ + ((float) halfH)) + eye_height;
 
     gluLookAt(camX, camY, camZ,
-              camX + sin(alpha), camY, camZ + cos(alpha),
+              camX + sinf(alpha), camY, camZ + cosf(alpha),
               0.0f, 1.0f, 0.0f);
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -281,9 +281,9 @@ void processKeys(unsigned char key, int xx, int yy) {
         case 'W':
         case 'w':
             // Position
-            camX += (float) (r * sin(alpha * 3.14 / 180.0));
-            //camY = r * sin(beta * 3.14 / 180.0);
-            camZ += (float) (r * cos(alpha * 3.14 / 180.0));
+            camX += (float) (r * sinf(alpha * 3.14 / 180.0));
+            //camY = r * sinf(beta * 3.14 / 180.0);
+            camZ += (float) (r * cosf(alpha * 3.14 / 180.0));
 
             cout << "w pressed!" << endl;
             break;
@@ -341,9 +341,9 @@ void processPassiveMouseMotion(int xx, int yy) {
     rAux = r;
     cout << "alpha=" << alpha << endl;
 
-    camX = rAux * sin(alphaAux * 3.14 / 180.0) * cos(betaAux * 3.14 / 180.0);
-    //camZ = rAux * cos(alphaAux * 3.14 / 180.0) * cos(betaAux * 3.14 / 180.0);
-    camY = rAux * sin(betaAux * 3.14 / 180.0);
+    camX = rAux * sinf(alphaAux * 3.14 / 180.0) * cosf(betaAux * 3.14 / 180.0);
+    //camZ = rAux * cosf(alphaAux * 3.14 / 180.0) * cosf(betaAux * 3.14 / 180.0);
+    camY = rAux * sinf(betaAux * 3.14 / 180.0);
 
     glutPostRedisplay();
 }

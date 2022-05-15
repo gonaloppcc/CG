@@ -187,9 +187,9 @@ void processMouseMotion(int xx, int yy) {
         if (rAux < 3)
             rAux = 3;
     }
-    camX = rAux * sin(alphaAux * 3.14 / 180.0) * cos(betaAux * 3.14 / 180.0);
-    camZ = rAux * cos(alphaAux * 3.14 / 180.0) * cos(betaAux * 3.14 / 180.0);
-    camY = rAux * sin(betaAux * 3.14 / 180.0);
+    camX = rAux * sinf(alphaAux * 3.14 / 180.0) * cosf(betaAux * 3.14 / 180.0);
+    camZ = rAux * cosf(alphaAux * 3.14 / 180.0) * cosf(betaAux * 3.14 / 180.0);
+    camY = rAux * sinf(betaAux * 3.14 / 180.0);
 }
 
 

@@ -25,9 +25,9 @@ const float cowboyRadius = 40;
 
 void spherical2Cartesian() {
 
-    camX = radius * cos(beta) * sin(alfa);
-    camY = radius * sin(beta);
-    camZ = radius * cos(beta) * cos(alfa);
+    camX = radius * cosf(beta) * sinf(alfa);
+    camY = radius * sinf(beta);
+    camZ = radius * cosf(beta) * cosf(alfa);
 }
 
 

@@ -9,25 +9,29 @@
 #else
 
 #include <GL/glut.h>
+#include <iostream>
 
 #endif
 
+#define TESSELLATION 100
 
 float camX = 0, camY, camZ = 5;
 int startX, startY, tracking = 0;
 
 int alpha = 0, beta = 0, r = 5;
 
-#define POINT_COUNT 5
+#define POINT_COUNT 6
 // Points that make up the loop for catmull-rom interpolation
-float p[POINT_COUNT][3] = {{-1, -1, 0},
-                           {-1, 1,  0},
-                           {1,  1,  0},
-                           {0,  0,  0},
-                           {1,  -1, 0}};
+float p[POINT_COUNT][3] = {
+        {-1, -1, 0},
+        {-1, 1, 0},
+        {1, 1, 0},
+        {0, 0, 0},
+        {1, -1, 0},
+        {-1, -1.5f, 0}
+};
 
 void buildRotMatrix(float *x, float *y, float *z, float *m) {
-
     m[0] = x[0];
     m[1] = x[1];
     m[2] = x[2];
@@ -48,7 +52,6 @@ void buildRotMatrix(float *x, float *y, float *z, float *m) {
 
 
 void cross(float *a, float *b, float *res) {
-
     res[0] = a[1] * b[2] - a[2] * b[1];
     res[1] = a[2] * b[0] - a[0] * b[2];
     res[2] = a[0] * b[1] - a[1] * b[0];
@@ -56,7 +59,6 @@ void cross(float *a, float *b, float *res) {
 
 
 void normalize(float *a) {
-
     float l = sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
     a[0] = a[0] / l;
     a[1] = a[1] / l;
@@ -65,69 +67,50 @@ void normalize(float *a) {
 
 
 float length(float *v) {
-
     float res = sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
     return res;
-
 }
 
-void multMatrixVector(const float *m, const float *v, float *res) {
-
+void multMatrixVector(const float m[4][4], const float *v, float *res) {
     for (int j = 0; j < 4; ++j) {
         res[j] = 0;
         for (int k = 0; k < 4; ++k) {
-            res[j] += v[k] * m[j * 4 + k];
+            res[j] += v[k] * m[j][k];
         }
     }
-
 }
 
 
-void getCatmullRomPoint(float t, float *p0, float *p1, float *p2, float *p3, float *pos, float *deriv) {
-
+void getCatmullRomPoint(float t, const float *p0, const float *p1, const float *p2, const float *p3, float *pos,
+                        float *deriv) {
     // catmull-rom matrix
-    float m[4][4] = {{-0.5f, 1.5f,  -1.5f, 0.5f},
-                     {1.0f,  -2.5f, 2.0f,  -0.5f},
-                     {-0.5f, 0.0f,  0.5f,  0.0f},
-                     {0.0f,  1.0f,  0.0f,  0.0f}};
+    const float m[4][4] = {{-0.5f, 1.5f,  -1.5f, 0.5f},
+                           {1.0f,  -2.5f, 2.0f,  -0.5f},
+                           {-0.5f, 0.0f,  0.5f,  0.0f},
+                           {0.0f,  1.0f,  0.0f,  0.0f}};
 
-    // Compute A = M * P
-    float A[4][4];
-
-    float point[4][4];
-
-    // Initialize p
-    for (int i = 0; i < 4; i++) {
-        point[0][i] = p0[i];
-        point[1][i] = p1[i];
-        point[2][i] = p2[i];
-        point[3][i] = p3[i];
-    }
-
-
-    for (int i = 0; i < 4; i++) {
-        multMatrixVector((float *) m, point[i], A[i]);
-    }
-
-    // Compute pos = T * A
+    // T vector
     float T[4] = {powf(t, 3), powf(t, 2), t, 1};
-    pos = (float *) (calloc(4, sizeof(float)));
 
-    for (int i = 0; i < 4; i++) {
-        pos[i] = T[0] * A[i][0] + T[1] * A[i][1] + T[2] * A[i][2] + T[3] * A[i][3];
-    }
-
-    // compute deriv = T' * A
-
+    // T' vector
     float Tl[4] = {powf(t, 3), powf(t, 2), t, 1};
-    deriv = (float *) (calloc(4, sizeof(float)));
 
-    for (int i = 0; i < 4; i++) {
-        deriv[i] = Tl[0] * A[i][0] + Tl[1] * A[i][1] + Tl[2] * A[i][2] + Tl[3] * A[i][3];
+    for (int i = 0; i < 3; i++) {
+        // ----- Compute A = M * P
+        float A[4];
+        const float Pi[4] = {p0[i], p1[i], p2[i], p3[i]}; // Vector P for the given component
+
+        multMatrixVector(m, Pi, A);
+
+        // Compute pos = T * A
+        pos[i] = T[0] * A[0] + T[1] * A[1] + T[2] * A[2] + T[3] * A[3];
+
+        // compute deriv = T' * A
+        deriv[i] = Tl[0] * A[0] + Tl[1] * A[1] + Tl[2] * A[2] + Tl[3] * A[3];
+
+
+        //std::cout << "i=" << i << " pos=" << pos[i] << " deriv=" << deriv[i] << std::endl;
     }
-
-
-    // ...
 }
 
 
@@ -136,7 +119,7 @@ void getGlobalCatmullRomPoint(float gt, float *pos, float *deriv) {
 
     float t = gt * POINT_COUNT; // this is the real global t
     int index = floor(t);  // which segment
-    t = t - index; // where within  the segment
+    t = t - (float) index; // where within  the segment
 
     // indices store the points
     int indices[4];
@@ -175,28 +158,31 @@ void changeSize(int w, int h) {
 
 
 void renderCatmullRomCurve() {
-    float p[4][3] = {{0.0f,  0.0f, 0.0f}, // A
-                     {1.0f,  0.0f, 1.0f}, // B
-                     {-1.0f, 0.0f, 1.0f}, // C
-                     {-1.0f, 0.0f, 0.0f}}; // D
-
-
     glBegin(GL_LINE_LOOP);
 
-    for (int i = 0; i < 4; ++i) {
-        float *pos;
-        float *deriv;
-        getGlobalCatmullRomPoint(0.33f * i, pos, deriv);
+    float *pos;
+    float *deriv;
+    pos = (float *) (calloc(3, sizeof(float))); // pos is a point so it has 3 coordinates
+    deriv = (float *) (calloc(3, sizeof(float))); // deriv is a point so it has 3 coordinates
+
+    float gt = 0;
+    while (gt < 1) {
+        getGlobalCatmullRomPoint(gt, pos, deriv);
         glVertex3f(pos[0], pos[1], pos[2]);
+
+        gt += 1.f / TESSELLATION;
     }
+
+    free(pos); // TODO: Free of the pos dynamic allocated memory
+
     glEnd();
-// draw curve using line segments with GL_LINE_LOOP
 }
 
 
-void renderScene(void) {
-
+void renderScene() {
     static float t = 0;
+    static auto *pos = (float *) (calloc(3, sizeof(float))); // pos is a point so it has 3 coordinates
+    static auto *deriv = (float *) (calloc(3, sizeof(float))); // deriv is a point so it has 3 coordinates
 
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -209,12 +195,13 @@ void renderScene(void) {
     renderCatmullRomCurve();
 
     // apply transformations here
-    // ...
+    getGlobalCatmullRomPoint(t, pos, deriv);
+    glTranslatef(pos[0], pos[1], pos[2]);
+
     glutWireTeapot(0.1);
 
-
     glutSwapBuffers();
-    t += 0.00001;
+    t += 1.f / TESSELLATION;
 }
 
 
@@ -273,9 +260,9 @@ void processMouseMotion(int xx, int yy) {
         if (rAux < 3)
             rAux = 3;
     }
-    camX = rAux * sin(alphaAux * 3.14 / 180.0) * cos(betaAux * 3.14 / 180.0);
-    camZ = rAux * cos(alphaAux * 3.14 / 180.0) * cos(betaAux * 3.14 / 180.0);
-    camY = rAux * sin(betaAux * 3.14 / 180.0);
+    camX = rAux * sinf(alphaAux * 3.14 / 180.0) * cosf(betaAux * 3.14 / 180.0);
+    camZ = rAux * cosf(alphaAux * 3.14 / 180.0) * cosf(betaAux * 3.14 / 180.0);
+    camY = rAux * sinf(betaAux * 3.14 / 180.0);
 }
 
 
