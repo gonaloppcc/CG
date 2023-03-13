@@ -1,2 +1,2 @@
 # CG
- 3rd year subject of Software Engineering at University of Minho
+ Computer Graphics - 3rd year subject of Software Engineering at University of Minho
